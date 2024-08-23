@@ -1,0 +1,173 @@
+
+1. CRAWL
+------------------------------------------------
+SSH, Bash, the Guest Shell, and Python Scripting
+------------------------------------------------
+
+# Change directory (cd) to our workshop directory (if you are at Cisco Live)
+
+cd /home/devnet/workshop/DEVWKS-2037
+
+
+# Create and activate a virtual environment
+
+python3 -m venv <CHOOSE A NAME>
+source <NAME YOU CHOSE>/bin/activate
+
+
+# Clone repo with files (not necessary if you are at Cisco Live)
+
+git clone https://github.com/xanderstevenson/nxos-device-level-apis.git
+cd nxos-device-level-apis
+ls
+
+
+# SSH into DevNet sandbox
+
+ssh admin@sbx-nxos-mgmt.cisco.com
+yes
+Admin_1234!
+terminal length 0
+show version
+show hostname
+show ip interface brief
+
+
+# Run Bash
+
+run bash
+whoami
+pwd
+exit
+
+
+# Run Guestshell
+
+guestshell
+dohost "show cdp global" "show ssh server"
+exit
+
+
+# Python interpreter
+
+python
+
+
+# Python code
+# Retrieve the interface list in JSON format
+
+from cli import *
+import json
+intflist = json.loads(clid('show interface brief'))
+
+# Loop through the interfaces and print those that are 'up'
+i = 0
+while i < len(intflist['TABLE_interface']['ROW_interface']):
+    intf = intflist['TABLE_interface']['ROW_interface'][i]
+    # Check if 'state' key exists in the intf dictionary
+    if 'state' in intf and intf['state'] == 'up':
+        print(intf['interface'])
+    i += 1
+
+exit()
+exit
+
+
+
+2. WALK
+---------------------------
+NETCONF, RESTCONF, and gRPC
+---------------------------
+
+# Install NCCLient and run code in Python interpreter (this step may not work at Cisco Live)
+
+pip install ncclient
+
+python
+
+from ncclient import manager
+nxv = manager.connect(host="131.226.217.151", port=830, username="admin", password="Admin_1234!", device_params={'name':'nexus'}, hostkey_verify=False)
+print(nxv.get_config(source='running', filter="<filter><System xmlns='http://cisco.com/ns/yang/cisco-nx-os-device'></System></filter>").data_xml)
+exit()
+
+
+3. JOG
+------------------------------------------------------------------
+Using Ansible to Abstract Away SSH, Bash, and Guest Shell Commands
+------------------------------------------------------------------
+
+# Install paramiko and run Ansible playbook
+
+pip install paramiko
+ansible-playbook ansible_playbooks/nxos_commands.yml -i hosts
+
+
+
+4. RUN
+-------------------------------------------
+NX-API: Device-level RESTful API Automation
+-------------------------------------------
+
+# SSH into device and check nxapi feature
+
+ssh admin@sbx-nxos-mgmt.cisco.com
+Admin_1234!
+show feature | include nxapi
+exit
+
+
+
+5. FLY
+--------------------------------
+Interact with NX-OS using Python
+--------------------------------
+
+# Install Requests and run Python file
+
+pip install requests
+python get_sys_info.py
+
+
+# Add this to the end of python get_sys_info.py
+# Define USR_URL and USR_PAYLOAD variables
+
+USR_URL = "https://sbx-nxos-mgmt.cisco.com/api/node/mo/sys/userext.json"
+USR_PAYLOAD = {
+    "aaaUser": {
+        "attributes": {
+            "pwdEncryptType": "0",
+            "name": "temp_user", # <--- Add your unique username here
+            "pwd": "temp_password",
+            "expires": "yes",
+            "expiration": "2030-07-31",
+        }
+    }
+}
+
+# Create a user with REST API's POST method
+usr_create = session.post(USR_URL, json=USR_PAYLOAD)
+
+# Check if creation was successful and if yes print such message
+if usr_create.ok:
+    print("USER WAS SUCCESSFULLY CREATED!")
+
+
+
+# Run Python file again to add User
+
+python get_sys_info.py
+
+
+# SSH into device to make sure User was added
+
+ssh admin@sbx-nxos-mgmt.cisco.com
+Admin_1234!
+terminal length 0
+show user-account
+exit
+
+
+***If you care at Cisco Live, please deactivate and delete your virtual environment***
+
+deactivate
+rm -r <NAME YOU CHOSE>
